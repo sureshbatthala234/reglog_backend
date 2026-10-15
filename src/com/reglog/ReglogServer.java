@@ -17,6 +17,9 @@ public class ReglogServer {
             // Authentication API endpoints
             server.createContext("/api/auth", new AuthController());
 
+            // Static Frontend UI handler (serves Sunshine Classmorphism UI)
+            server.createContext("/", new com.reglog.controller.StaticFileHandler());
+
             server.setExecutor(Executors.newFixedThreadPool(10));
             server.start();
 
