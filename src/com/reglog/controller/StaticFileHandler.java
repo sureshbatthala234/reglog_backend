@@ -30,7 +30,9 @@ public class StaticFileHandler implements HttpHandler {
         }
 
         File targetFile;
-        if (path.equals("/") || path.equals("/login") || path.equals("/register") || path.equals("/home") || path.equals("/forgot-password")) {
+        if (path.startsWith("/auth/") || path.equals("/auth") || path.equals("/") || 
+            path.equals("/login") || path.equals("/register") || path.equals("/home") || 
+            path.equals("/forgot-password") || path.equals("/reset-password")) {
             targetFile = new File(frontendDir, "index.html");
         } else {
             targetFile = new File(frontendDir, path.startsWith("/") ? path.substring(1) : path);
