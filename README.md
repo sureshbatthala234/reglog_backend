@@ -71,11 +71,11 @@ You can customize database connections and security tokens via `application.prop
 
 ## 5. REST API Documentation
 
-Base URL: `http://localhost:8080/api/auth`
+Base URL: `http://localhost:8080/auth`
 
 ### 1. Register User
 - **Method**: `POST`
-- **Endpoint**: `/api/auth/register`
+- **Endpoint**: /register`
 - **Headers**: `Content-Type: application/json`
 - **Request Body**:
   ```json
@@ -105,7 +105,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 2. Login
 - **Method**: `POST`
-- **Endpoint**: `/api/auth/login`
+- **Endpoint**: /login`
 - **Request Body**:
   ```json
   {
@@ -139,7 +139,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 3. Logout (Server-Side Session Revocation)
 - **Method**: `POST`
-- **Endpoint**: `/api/auth/logout`
+- **Endpoint**: /logout`
 - **Headers**: `Authorization: Bearer <token>`
 - **Success Response (200)**:
   ```json
@@ -151,7 +151,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 4. Get Current Authenticated Profile
 - **Method**: `GET`
-- **Endpoint**: `/api/auth/me`
+- **Endpoint**: /me
 - **Headers**: `Authorization: Bearer <token>`
 - **Success Response (200)**:
   ```json
@@ -169,7 +169,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 5. Forgot Password (Request OTP)
 - **Method**: `POST`
-- **Endpoint**: `/api/auth/forgot-password`
+- **Endpoint**: /forgot-password`
 - **Request Body**:
   ```json
   {
@@ -187,7 +187,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 6. Verify OTP
 - **Method**: `POST`
-- **Endpoint**: `/api/auth/verify-otp`
+- **Endpoint**: /verify-otp`
 - **Request Body**:
   ```json
   {
@@ -206,7 +206,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 7. Reset Password
 - **Method**: `POST`
-- **Endpoint**: `/api/auth/reset-password`
+- **Endpoint**: /reset-password`
 - **Request Body**:
   ```json
   {
@@ -226,7 +226,7 @@ Base URL: `http://localhost:8080/api/auth`
 
 ### 8. Change Password (Authenticated)
 - **Method**: `PUT`
-- **Endpoint**: `/api/auth/change-password`
+- **Endpoint**: /change-password`
 - **Headers**: `Authorization: Bearer <token>`
 - **Request Body**:
   ```json
