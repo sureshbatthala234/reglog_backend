@@ -374,16 +374,27 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 
 ---
 
-## Frontend Integration
+## URL Reference
 
-The backend also serves the React frontend static files via `StaticFileHandler`:
+> **Important:** The frontend UI and the backend API are served from different paths on the same port `8080`.
 
-| URL | Description |
-|-----|-------------|
-| `http://localhost:8080/` | Serves `reglog_frontend/index.html` |
-| `http://localhost:8080/login` | Serves `reglog_frontend/index.html` |
-| `http://localhost:8080/register` | Serves `reglog_frontend/index.html` |
-| `http://localhost:8080/auth` | Serves `reglog_frontend/index.html` |
+| Type | URL | Description |
+|------|-----|-------------|
+| 🌐 **Frontend UI** | `http://localhost:8080/auth` | Opens the Login/Register page in browser |
+| 🌐 **Frontend UI** | `http://localhost:8080/login` | Login page |
+| 🌐 **Frontend UI** | `http://localhost:8080/register` | Register page |
+| 🌐 **Frontend UI** | `http://localhost:8080/` | Redirects to login |
+| 🔌 **API** | `http://localhost:8080/api/auth/register` | Register user (POST) |
+| 🔌 **API** | `http://localhost:8080/api/auth/login` | Login (POST) |
+| 🔌 **API** | `http://localhost:8080/api/auth/logout` | Logout (POST) |
+| 🔌 **API** | `http://localhost:8080/api/auth/me` | Get profile (GET) |
+| 🔌 **API** | `http://localhost:8080/api/auth/forgot-password` | Request OTP (POST) |
+| 🔌 **API** | `http://localhost:8080/api/auth/verify-otp` | Verify OTP (POST) |
+| 🔌 **API** | `http://localhost:8080/api/auth/reset-password` | Reset password (POST) |
+| 🔌 **API** | `http://localhost:8080/api/auth/change-password` | Change password (PUT) |
+
+> ✅ Open the app in browser at: **`http://localhost:8080/auth`**
+> ❌ `http://localhost:8080/api/auth` is NOT a browser page — it is the API base path only
 
 ---
 
@@ -396,3 +407,4 @@ The backend also serves the React frontend static files via `StaticFileHandler`:
 | `MySQL Driver Not Found` | Ensure `lib/mysql-connector-j-8.3.0.jar` is present |
 | `reglog_db` does not exist | Run `CREATE DATABASE IF NOT EXISTS reglog_db;` in MySQL |
 | `bin` folder missing | Run `build.bat` or create the `bin/` folder manually before compiling |
+| Browser shows blank/error at `/api/auth` | That is the API path, not a page — open `/auth` instead |
