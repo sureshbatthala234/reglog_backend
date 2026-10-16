@@ -1,256 +1,398 @@
 # RegLog Backend — Registration & Authentication Service
 
-A robust, pure Java authentication backend service built with native Java HTTP server, MySQL JDBC, BCrypt password hashing, and RFC 7519 JWT session security.
+A robust, pure Java authentication backend service built with native Java `HttpServer`, MySQL JDBC, BCrypt password hashing, and RFC 7519 JWT session security. No frameworks — zero Spring, zero external HTTP libraries.
 
 ---
 
-## 1. Prerequisites
+## Tech Stack
 
-- **Java JDK**: Version 17 or higher (tested with Java 17, 21, and 26).
-- **MySQL Server**: Version 8.0+ running on `localhost:3306`.
-- **Database**: `reglog_db`.
+| Layer | Technology |
+|-------|-----------|
+| Language | Java 17+ |
+| HTTP Server | `com.sun.net.httpserver.HttpServer` (built-in Java) |
+| Database | MySQL 8.0+ via JDBC |
+| Password Hashing | jBCrypt 0.4 |
+| JWT | Custom HMAC-SHA256 (RFC 7519) |
+| JSON | Gson 2.10.1 |
 
 ---
 
-## 2. Database Setup
+## Project Structure
 
-1. Make sure MySQL is running on port 3306.
-2. The default credentials configured are:
-   - **Host**: `localhost`
-   - **Port**: `3306`
-   - **Database**: `reglog_db`
-   - **Username**: `root`
-   - **Password**: `root`
-3. If not already created, run the following SQL command:
+```
+reglog_backend/
+├── src/
+│   └── com/reglog/
+│       ├── ReglogServer.java          # Entry point — starts HttpServer on port 8080
+│       ├── config/
+│       │   └── DatabaseConfig.java    # Reads application.properties, manages DB connection
+│       ├── controller/
+│       │   ├── AuthController.java    # Routes all /api/auth/* requests
+│       │   └── StaticFileHandler.java # Serves reglog_frontend static files at /
+│       ├── model/
+│       │   ├── User.java              # User entity
+│       │   └── UserSession.java       # Session/token entity
+│       ├── security/
+│       │   ├── JwtUtil.java           # JWT generation & validation (HMAC-SHA256)
+│       │   └── PasswordUtil.java      # BCrypt hash & verify
+│       └── service/
+│           └── AuthService.java       # Business logic: register, login, OTP, etc.
+├── lib/
+│   ├── gson-2.10.1.jar
+│   ├── jbcrypt-0.4.jar
+│   └── mysql-connector-j-8.3.0.jar
+├── bin/                               # Compiled .class files (auto-generated)
+├── application.properties             # DB credentials, port, JWT secret
+├── build.bat                          # Windows compile script
+└── run.bat                            # Windows run script
+```
+
+---
+
+## Prerequisites
+
+- **Java JDK** 17 or higher (tested with Java 17, 21, 26)
+- **MySQL Server** 8.0+ running on `localhost:3306`
+- No Maven or Gradle required — all JARs are bundled in `lib/`
+
+---
+
+## Database Setup
+
+1. Make sure MySQL is running on port `3306`.
+2. Create the database:
    ```sql
    CREATE DATABASE IF NOT EXISTS reglog_db;
    ```
-4. **Auto-Migration**: The backend automatically initializes and verifies all tables (`users`, `user_sessions`, `otp_verifications`) on startup.
+3. **Auto-Migration**: On every startup, the backend automatically creates and verifies the following tables:
+   - `users` — stores user accounts
+   - `user_sessions` — stores active JWT sessions
+   - `otp_verifications` — stores OTP codes for password reset
 
 ---
 
-## 3. Configuration & Environment Variables
+## Configuration
 
-You can customize database connections and security tokens via `application.properties` or environment variables:
+Edit `application.properties` to change defaults:
 
-| Property | Default Value | Environment Variable | Description |
-| :--- | :--- | :--- | :--- |
-| `db.url` | `jdbc:mysql://localhost:3306/reglog_db` | `DB_URL` | MySQL JDBC connection string |
-| `db.username` | `root` | `DB_USERNAME` | MySQL user |
-| `db.password` | `root` | `DB_PASSWORD` | MySQL password |
-| `server.port` | `8080` | `PORT` | HTTP Server port |
-| `jwt.secret` | `RegLogSuperSecretKey...` | `JWT_SECRET` | Secret key for HMAC-SHA256 JWTs |
-| `jwt.expiration` | `86400000` (24h in ms) | `JWT_EXPIRATION` | JWT token lifespan |
+```properties
+# Database
+db.url=jdbc:mysql://localhost:3306/reglog_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+db.username=root
+db.password=root
 
----
+# Server
+server.port=8080
 
-## 4. How to Build & Run
+# JWT
+jwt.secret=RegLogSuperSecretKeyForJWTAuthentication2026
+jwt.expiration=86400000
+```
 
-### Method 1: Using Provided Windows Scripts
-- **To compile**:
-  ```cmd
-  build.bat
-  ```
-- **To run**:
-  ```cmd
-  run.bat
-  ```
+Supports environment variable overrides:
 
-### Method 2: Using Command Line (PowerShell / Bash)
-- **Compile**:
-  ```powershell
-  if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" }
-  javac -cp "lib/*" -d bin (Get-ChildItem -Path src -Filter *.java -Recurse | ForEach-Object { $_.FullName })
-  ```
-- **Run**:
-  ```powershell
-  java -cp "bin;lib/*" com.reglog.ReglogServer
-  ```
+| Property | Environment Variable |
+|----------|---------------------|
+| `db.url` | `DB_URL` |
+| `db.username` | `DB_USERNAME` |
+| `db.password` | `DB_PASSWORD` |
+| `server.port` | `PORT` |
+| `jwt.secret` | `JWT_SECRET` |
+| `jwt.expiration` | `JWT_EXPIRATION` |
 
 ---
 
-## 5. REST API Documentation
+## How to Build & Run
 
-Base URL: `http://localhost:8080/auth`
+### Method 1 — Windows Scripts (Easiest)
 
-### 1. Register User
-- **Method**: `POST`
-- **Endpoint**: /register`
-- **Headers**: `Content-Type: application/json`
-- **Request Body**:
-  ```json
-  {
+```cmd
+# Compile
+build.bat
+
+# Run
+run.bat
+```
+
+### Method 2 — PowerShell
+
+```powershell
+# Compile
+if (!(Test-Path "bin")) { New-Item -ItemType Directory -Path "bin" }
+javac -cp "lib/*" -d bin (Get-ChildItem -Path src -Filter *.java -Recurse | ForEach-Object { $_.FullName })
+
+# Run
+java -cp "bin;lib/*" com.reglog.ReglogServer
+```
+
+### Method 3 — Linux / macOS / Git Bash
+
+```bash
+mkdir -p bin
+find src -name "*.java" > sources.txt
+javac -cp "lib/*" -d bin @sources.txt
+java -cp "bin:lib/*" com.reglog.ReglogServer
+```
+
+On successful startup you will see:
+
+```
+============================================================
+  RegLog Authentication & Registration Service (Java Backend)
+============================================================
+  Server is listening on port: 8080
+  Database connected: MySQL (localhost:3306 / reglog_db)
+  Base API Endpoint: http://localhost:8080/api/auth
+============================================================
+```
+
+---
+
+## REST API Reference
+
+**Base URL:** `http://localhost:8080/api/auth`
+**Content-Type:** `application/json`
+**Authentication:** `Authorization: Bearer <token>` (where required)
+
+---
+
+### POST `/api/auth/register`
+
+Register a new user account.
+
+**Request Body:**
+```json
+{
+  "fullName": "John Doe",
+  "email": "john.doe@example.com",
+  "mobileNumber": "9876543210",
+  "password": "Password@123",
+  "confirmPassword": "Password@123"
+}
+```
+
+**Validation Rules:**
+- All fields are required
+- Valid email format
+- Mobile number must be exactly 10 digits
+- Passwords must match
+- Password: min 8 characters, must include uppercase, lowercase, digit, and special character
+- Email and mobile number must be unique
+
+**Success `201`:**
+```json
+{
+  "message": "User registered successfully! Please log in.",
+  "userId": 1,
+  "status": 201
+}
+```
+
+---
+
+### POST `/api/auth/login`
+
+Login with email or mobile number.
+
+**Request Body:**
+```json
+{
+  "identifier": "john.doe@example.com",
+  "password": "Password@123"
+}
+```
+
+> `identifier` can be an email address **or** a 10-digit mobile number.
+
+**Success `200`:**
+```json
+{
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "fullName": "John Doe",
+    "email": "john.doe@example.com",
+    "mobileNumber": "9876543210"
+  },
+  "status": 200
+}
+```
+
+**Invalid Credentials `401`:**
+```json
+{
+  "error": "Invalid credentials.",
+  "status": 401
+}
+```
+
+> Generic error — does not reveal whether email/mobile or password was wrong (prevents user enumeration).
+
+---
+
+### POST `/api/auth/logout`
+
+Revokes the JWT session on the server side.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Success `200`:**
+```json
+{
+  "message": "Logged out successfully",
+  "status": 200
+}
+```
+
+---
+
+### GET `/api/auth/me`
+
+Returns the authenticated user's profile.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Success `200`:**
+```json
+{
+  "user": {
+    "id": 1,
     "fullName": "John Doe",
     "email": "john.doe@example.com",
     "mobileNumber": "9876543210",
-    "password": "Password@123",
-    "confirmPassword": "Password@123"
-  }
-  ```
-- **Validation**:
-  - All fields are required.
-  - Email format must be valid.
-  - Mobile number must be exactly 10 digits.
-  - Passwords must match.
-  - Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
-  - Email and Mobile Number must each be unique.
-- **Success Response (201)**:
-  ```json
-  {
-    "message": "User registered successfully! Please log in.",
-    "userId": 1,
-    "status": 201
-  }
-  ```
-
-### 2. Login
-- **Method**: `POST`
-- **Endpoint**: /login`
-- **Request Body**:
-  ```json
-  {
-    "identifier": "john.doe@example.com",
-    "password": "Password@123"
-  }
-  ```
-  *(Note: `identifier` can be either an Email address OR a 10-digit Mobile Number)*
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "Login successful",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "fullName": "John Doe",
-      "email": "john.doe@example.com",
-      "mobileNumber": "9876543210"
-    },
-    "status": 200
-  }
-  ```
-- **Invalid Credentials (401)**:
-  ```json
-  {
-    "error": "Invalid credentials.",
-    "status": 401
-  }
-  ```
-  *(Generic error message that does not leak whether email/mobile or password was wrong)*
-
-### 3. Logout (Server-Side Session Revocation)
-- **Method**: `POST`
-- **Endpoint**: /logout`
-- **Headers**: `Authorization: Bearer <token>`
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "Logged out successfully",
-    "status": 200
-  }
-  ```
-
-### 4. Get Current Authenticated Profile
-- **Method**: `GET`
-- **Endpoint**: /me
-- **Headers**: `Authorization: Bearer <token>`
-- **Success Response (200)**:
-  ```json
-  {
-    "user": {
-      "id": 1,
-      "fullName": "John Doe",
-      "email": "john.doe@example.com",
-      "mobileNumber": "9876543210",
-      "createdDate": "2026-10-15 18:46:58.0"
-    },
-    "status": 200
-  }
-  ```
-
-### 5. Forgot Password (Request OTP)
-- **Method**: `POST`
-- **Endpoint**: /forgot-password`
-- **Request Body**:
-  ```json
-  {
-    "identifier": "john.doe@example.com"
-  }
-  ```
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "OTP generated successfully. (In local development, check terminal console)",
-    "otp": "988613",
-    "status": 200
-  }
-  ```
-
-### 6. Verify OTP
-- **Method**: `POST`
-- **Endpoint**: /verify-otp`
-- **Request Body**:
-  ```json
-  {
-    "identifier": "john.doe@example.com",
-    "otp": "988613"
-  }
-  ```
-- **Success Response (200)**:
-  ```json
-  {
-    "verified": true,
-    "message": "OTP verified successfully.",
-    "status": 200
-  }
-  ```
-
-### 7. Reset Password
-- **Method**: `POST`
-- **Endpoint**: /reset-password`
-- **Request Body**:
-  ```json
-  {
-    "identifier": "john.doe@example.com",
-    "otp": "988613",
-    "newPassword": "NewPassword@2026",
-    "confirmPassword": "NewPassword@2026"
-  }
-  ```
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "Password reset successfully. You can now login with your new password.",
-    "status": 200
-  }
-  ```
-
-### 8. Change Password (Authenticated)
-- **Method**: `PUT`
-- **Endpoint**: /change-password`
-- **Headers**: `Authorization: Bearer <token>`
-- **Request Body**:
-  ```json
-  {
-    "currentPassword": "Password@123",
-    "newPassword": "NewPassword@2026",
-    "confirmPassword": "NewPassword@2026"
-  }
-  ```
-- **Success Response (200)**:
-  ```json
-  {
-    "message": "Password changed successfully.",
-    "status": 200
-  }
-  ```
+    "createdDate": "2026-10-15 18:46:58.0"
+  },
+  "status": 200
+}
+```
 
 ---
 
-## 6. Troubleshooting
+### POST `/api/auth/forgot-password`
 
-- **Access denied for user 'root'@'localhost'**:
-  - Verify your MySQL password in `application.properties`.
-- **Port 8080 already in use**:
-  - Change `server.port` in `application.properties` to `8081` or another open port.
-- **MySQL Driver Not Found**:
-  - Ensure `lib/mysql-connector-j-8.3.0.jar` is included in the `-cp` classpath flag.
+Generates a 6-digit OTP for password recovery.
+
+**Request Body:**
+```json
+{
+  "identifier": "john.doe@example.com"
+}
+```
+
+**Success `200`:**
+```json
+{
+  "message": "OTP generated successfully. (In local development, check terminal console)",
+  "otp": "988613",
+  "status": 200
+}
+```
+
+---
+
+### POST `/api/auth/verify-otp`
+
+Verifies the 6-digit OTP.
+
+**Request Body:**
+```json
+{
+  "identifier": "john.doe@example.com",
+  "otp": "988613"
+}
+```
+
+**Success `200`:**
+```json
+{
+  "verified": true,
+  "message": "OTP verified successfully.",
+  "status": 200
+}
+```
+
+---
+
+### POST `/api/auth/reset-password`
+
+Resets password after OTP verification.
+
+**Request Body:**
+```json
+{
+  "identifier": "john.doe@example.com",
+  "otp": "988613",
+  "newPassword": "NewPassword@2026",
+  "confirmPassword": "NewPassword@2026"
+}
+```
+
+**Success `200`:**
+```json
+{
+  "message": "Password reset successfully. You can now login with your new password.",
+  "status": 200
+}
+```
+
+---
+
+### PUT `/api/auth/change-password`
+
+Changes password for an authenticated user.
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "currentPassword": "Password@123",
+  "newPassword": "NewPassword@2026",
+  "confirmPassword": "NewPassword@2026"
+}
+```
+
+**Success `200`:**
+```json
+{
+  "message": "Password changed successfully.",
+  "status": 200
+}
+```
+
+---
+
+## CORS
+
+All endpoints include CORS headers:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+---
+
+## Frontend Integration
+
+The backend also serves the React frontend static files via `StaticFileHandler`:
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8080/` | Serves `reglog_frontend/index.html` |
+| `http://localhost:8080/login` | Serves `reglog_frontend/index.html` |
+| `http://localhost:8080/register` | Serves `reglog_frontend/index.html` |
+| `http://localhost:8080/auth` | Serves `reglog_frontend/index.html` |
+
+---
+
+## Troubleshooting
+
+| Error | Fix |
+|-------|-----|
+| `Access denied for user 'root'@'localhost'` | Check `db.password` in `application.properties` |
+| `Port 8080 already in use` | Change `server.port` to `8081` or kill the process using port 8080 |
+| `MySQL Driver Not Found` | Ensure `lib/mysql-connector-j-8.3.0.jar` is present |
+| `reglog_db` does not exist | Run `CREATE DATABASE IF NOT EXISTS reglog_db;` in MySQL |
+| `bin` folder missing | Run `build.bat` or create the `bin/` folder manually before compiling |
